@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="description" content="Teleprompter simple para grabar con cámara frontal en Android/Chrome">
+    <meta name="description" content="Teleprompter simple para grabar con c&aacute;mara frontal en Android/Chrome">
     <title>Teleprompter</title>
     <style>
         :root {
@@ -11,6 +11,7 @@
             --font-size: 2rem;
             --text-color: #ffffff;
             --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), -2px -2px 4px rgba(0, 0, 0, 0.8);
+            --line-height: 1.8;
         }
         * {
             margin: 0;
@@ -78,18 +79,45 @@
             right: 0;
             padding: 0 var(--overlay-padding);
             font-size: var(--font-size);
-            line-height: 1.8;
+            line-height: var(--line-height);
             color: var(--text-color);
             text-shadow: var(--text-shadow);
-            white-space: pre-wrap;
             word-wrap: break-word;
             font-weight: 600;
             text-align: center;
             will-change: transform;
         }
-        .teleprompter-text.position-top { top: 10%; }
-        .teleprompter-text.position-center { top: 50%; transform: translateY(-50%); }
-        .teleprompter-text.position-bottom { bottom: 15%; }
+        .teleprompter-text span {
+            display: block;
+            height: calc(var(--font-size) * var(--line-height));
+            overflow: hidden;
+        }
+        .teleprompter-viewport {
+            position: absolute;
+            top: 18%;
+            left: 0;
+            right: 0;
+            height: calc(var(--font-size) * var(--line-height) * 4);
+            overflow: hidden;
+        }
+        .teleprompter-viewport.position-top { top: 8%; }
+        .teleprompter-viewport.position-center { top: 40%; }
+        .teleprompter-viewport.position-bottom { top: 68%; }
+        .reading-guide {
+            position: absolute;
+            top: calc(var(--font-size) * var(--line-height) * 2);
+            left: 0;
+            right: 0;
+            height: calc(var(--font-size) * var(--line-height));
+            background: rgba(255, 213, 79, 0.3);
+            border-top: 2px solid #ffd54f;
+            border-bottom: 2px solid #ffd54f;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .teleprompter-text.position-top,
+        .teleprompter-text.position-center,
+        .teleprompter-text.position-bottom { top: 0; }
         .controls {
             position: absolute;
             bottom: 0;
@@ -220,7 +248,7 @@
 <body>
     <div class="app-container">
         <div class="status-bar">
-            <span id="cameraStatus">Cámara: inicializando...</span>
+            <span id="cameraStatus">C&aacute;mara: inicializando...</span>
             <span id="recordingStatus" class="recording-indicator">
                 <span class="recording-dot"></span>
                 <span>GRABANDO</span>
@@ -229,7 +257,10 @@
         <div class="camera-wrapper">
             <video id="video" autoplay playsinline muted></video>
             <div class="teleprompter-overlay">
-                <div id="teleprompterText" class="teleprompter-text position-center"></div>
+                <div id="teleprompterViewport" class="teleprompter-viewport position-center">
+                    <div id="teleprompterText" class="teleprompter-text position-center"></div>
+                    <div class="reading-guide" aria-hidden="true"></div>
+                </div>
             </div>
         </div>
         <div class="video-preview" id="videoPreview">
@@ -238,26 +269,29 @@
         <a id="downloadLink" class="download-link" download="teleprompter-recording.webm">Descargar video (.webm)</a>
         <div class="controls" id="controls">
             <div class="control-group">
-                <button id="toggleRecordingBtn" class="btn btn-danger" disabled>Iniciar grabación</button>
+                <button id="toggleRecordingBtn" class="btn btn-danger" disabled>Iniciar grabaci&oacute;n</button>
                 <button id="pauseScrollBtn" class="btn btn-warning" disabled>Pausar desplazamiento</button>
+                <button id="resetScrollBtn" class="btn btn-primary" disabled>Reiniciar lectura</button>
                 <button id="toggleControlsBtn" class="btn">Ocultar controles</button>
             </div>
             <div class="control-group script-group">
-                <textarea id="scriptInput" placeholder="Escribe o pega aquí tu guion... Puedes editarlo antes o después de grabar. Se guarda automáticamente." spellcheck="false"></textarea>
+                <textarea id="scriptInput" placeholder="Escribe o pega aqu&iacute; tu guion... Puedes editarlo antes o despu&eacute;s de grabar. Se guarda autom&aacute;ticamente." spellcheck="false"></textarea>
             </div>
             <div class="control-group">
                 <label>Velocidad: <input type="range" id="speedRange" min="10" max="150" step="5" value="40"> <span id="speedValue">40</span> px/s</label>
-                <label>Tamaño texto: <input type="range" id="fontSizeRange" min="1.25" max="3.5" step="0.125" value="2"> <span id="fontSizeValue">2</span> rem</label>
-                <label>Posición: <select id="positionSelect"><option value="top">Arriba</option><option value="center" selected>Centro</option><option value="bottom">Abajo</option></select></label>
+                <label>Tama&ntilde;o texto: <input type="range" id="fontSizeRange" min="1.25" max="3.5" step="0.125" value="2"> <span id="fontSizeValue">2</span> rem</label>
+                <label>Posici&oacute;n: <select id="positionSelect"><option value="top">Arriba</option><option value="center" selected>Centro</option><option value="bottom">Abajo</option></select></label>
             </div>
         </div>
     </div>
     <script>
         const video = document.getElementById('video');
         const teleprompterText = document.getElementById('teleprompterText');
+        const teleprompterViewport = document.getElementById('teleprompterViewport');
         const scriptInput = document.getElementById('scriptInput');
         const toggleRecordingBtn = document.getElementById('toggleRecordingBtn');
         const pauseScrollBtn = document.getElementById('pauseScrollBtn');
+        const resetScrollBtn = document.getElementById('resetScrollBtn');
         const toggleControlsBtn = document.getElementById('toggleControlsBtn');
         const speedRange = document.getElementById('speedRange');
         const speedValue = document.getElementById('speedValue');
@@ -279,12 +313,13 @@
         let isScrolling = false;
         let isRecording = false;
         let lastTimestamp = 0;
+        let lineHeight = 0;
         const STORAGE_KEY = 'teleprompter-script';
         const savedScript = localStorage.getItem(STORAGE_KEY);
         if (savedScript) {
             scriptInput.value = savedScript;
         } else {
-            scriptInput.value = 'Bienvenido al teleprompter.\n\nEscribe aquí tu guion.\n\nAjusta la velocidad, tamaño y posición.\n\nEl texto solo se muestra en pantalla, no se grabará en el video.';
+            scriptInput.value = 'Bienvenido al teleprompter.\n\nEscribe aqu\u00ed tu guion.\n\nAjusta la velocidad, tama\u00f1o y posici\u00f3n.\n\nEl texto solo se muestra en pantalla, no se grabar\u00e1 en el video.';
         }
         updateTeleprompterText();
         scriptInput.addEventListener('input', () => {
@@ -292,36 +327,47 @@
             updateTeleprompterText();
         });
         function updateTeleprompterText() {
-            teleprompterText.textContent = scriptInput.value || '';
+            const lines = (scriptInput.value || '').split(/\r?\n/);
+            teleprompterText.replaceChildren(...lines.map((line) => {
+                const element = document.createElement('span');
+                element.textContent = line || ' ';
+                return element;
+            }));
             scrollPosition = 0;
-            teleprompterText.style.transform = positionSelect.value === 'center'
-                ? 'translateY(-50%) translateY(' + scrollPosition + 'px)'
-                : 'translateY(' + scrollPosition + 'px)';
+            updateLineHeight();
+            renderScrollPosition();
+        }
+        function updateLineHeight() {
+            lineHeight = parseFloat(getComputedStyle(teleprompterText).lineHeight);
+        }
+        function renderScrollPosition() {
+            teleprompterText.style.transform = 'translateY(' + ((lineHeight * 2) - scrollPosition) + 'px)';
         }
         async function initCamera() {
             try {
-                cameraStatus.textContent = 'Cámara: solicitando permiso...';
+                cameraStatus.textContent = 'C\u00e1mara: solicitando permiso...';
                 const constraints = {
                     video: { facingMode: { ideal: 'user' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
                     audio: true
                 };
                 mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = mediaStream;
-                cameraStatus.textContent = 'Cámara: activa (frontal)';
+                cameraStatus.textContent = 'C\u00e1mara: activa (frontal)';
                 toggleRecordingBtn.disabled = false;
                 pauseScrollBtn.disabled = false;
+                resetScrollBtn.disabled = false;
                 startScrolling();
             } catch (error) {
                 console.error('Error:', error);
                 cameraStatus.textContent = 'Error: ' + error.message;
-                alert('No se pudo acceder a la cámara o al micrófono. Usa HTTPS y concede permisos.');
+                alert('No se pudo acceder a la c\u00e1mara o al micr\u00f3fono. Usa HTTPS y concede permisos.');
             }
         }
         function startScrolling() {
             if (isScrolling) return;
             isScrolling = true;
             lastTimestamp = 0;
-            scroll();
+            scrollAnimationId = requestAnimationFrame(scroll);
         }
         function pauseScrolling() {
             isScrolling = false;
@@ -332,15 +378,15 @@
         }
         function scroll(timestamp) {
             if (!isScrolling) return;
-            if (lastTimestamp === 0) lastTimestamp = timestamp;
+            if (lastTimestamp === 0) {
+                lastTimestamp = timestamp;
+                scrollAnimationId = requestAnimationFrame(scroll);
+                return;
+            }
             const delta = (timestamp - lastTimestamp) / 1000;
             lastTimestamp = timestamp;
-            scrollPosition -= scrollSpeed * delta;
-            if (positionSelect.value === 'center') {
-                teleprompterText.style.transform = 'translateY(-50%) translateY(' + scrollPosition + 'px)';
-            } else {
-                teleprompterText.style.transform = 'translateY(' + scrollPosition + 'px)';
-            }
+            scrollPosition += scrollSpeed * delta;
+            renderScrollPosition();
             scrollAnimationId = requestAnimationFrame(scroll);
         }
         toggleRecordingBtn.addEventListener('click', () => {
@@ -349,6 +395,12 @@
         });
         function startRecording() {
             if (!mediaStream) return;
+            if (!isScrolling) {
+                startScrolling();
+                pauseScrollBtn.textContent = 'Pausar desplazamiento';
+                pauseScrollBtn.classList.remove('btn-primary');
+                pauseScrollBtn.classList.add('btn-warning');
+            }
             recordedChunks = [];
             const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
                 ? 'video/webm;codecs=vp9'
@@ -368,27 +420,37 @@
                     videoPreview.classList.add('active');
                     downloadLink.classList.add('active');
                     isRecording = false;
-                    toggleRecordingBtn.textContent = 'Iniciar grabación';
+                    toggleRecordingBtn.textContent = 'Iniciar grabaci\u00f3n';
                     toggleRecordingBtn.classList.remove('btn-success');
                     toggleRecordingBtn.classList.add('btn-danger');
                     recordingStatus.classList.remove('active');
-                    cameraStatus.textContent = 'Cámara: activa (frontal)';
+                    cameraStatus.textContent = 'C\u00e1mara: activa (frontal)';
                 };
                 mediaRecorder.start(1000);
                 isRecording = true;
-                toggleRecordingBtn.textContent = 'Detener grabación';
+                toggleRecordingBtn.textContent = 'Detener grabaci\u00f3n';
                 toggleRecordingBtn.classList.remove('btn-danger');
                 toggleRecordingBtn.classList.add('btn-success');
                 recordingStatus.classList.add('active');
                 cameraStatus.textContent = 'Grabando...';
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al iniciar grabación: ' + error.message);
+                alert('Error al iniciar grabaci\u00f3n: ' + error.message);
             }
         }
         function stopRecording() {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
         }
+        resetScrollBtn.addEventListener('click', () => {
+            scrollPosition = 0;
+            renderScrollPosition();
+            if (!isScrolling) {
+                startScrolling();
+                pauseScrollBtn.textContent = 'Pausar desplazamiento';
+                pauseScrollBtn.classList.remove('btn-primary');
+                pauseScrollBtn.classList.add('btn-warning');
+            }
+        });
         pauseScrollBtn.addEventListener('click', () => {
             if (isScrolling) {
                 pauseScrolling();
@@ -416,13 +478,10 @@
             fontSizeValue.textContent = fontSize;
         });
         positionSelect.addEventListener('change', () => {
-            teleprompterText.classList.remove('position-top', 'position-center', 'position-bottom');
-            teleprompterText.classList.add('position-' + positionSelect.value);
-            if (positionSelect.value === 'center') {
-                teleprompterText.style.transform = 'translateY(-50%) translateY(' + scrollPosition + 'px)';
-            } else {
-                teleprompterText.style.transform = 'translateY(' + scrollPosition + 'px)';
-            }
+            teleprompterViewport.classList.remove('position-top', 'position-center', 'position-bottom');
+            teleprompterViewport.classList.add('position-' + positionSelect.value);
+            updateLineHeight();
+            renderScrollPosition();
         });
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && isScrolling && !isRecording) {
@@ -435,6 +494,8 @@
         window.addEventListener('load', initCamera);
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
+                updateLineHeight();
+                renderScrollPosition();
                 if (isScrolling) {
                     pauseScrolling();
                     startScrolling();
@@ -444,7 +505,7 @@
         window.addEventListener('beforeunload', (e) => {
             if (isRecording) {
                 e.preventDefault();
-                e.returnValue = 'Hay una grabación en curso. ¿Seguro que quieres salir?';
+                e.returnValue = 'Hay una grabaci\u00f3n en curso. \u00bfSeguro que quieres salir?';
             }
         });
     </script>
