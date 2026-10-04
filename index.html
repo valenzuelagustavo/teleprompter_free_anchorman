@@ -100,7 +100,7 @@
             height: calc(var(--font-size) * var(--line-height) * 4);
             overflow: hidden;
         }
-        .teleprompter-viewport.position-top { top: 8%; }
+        .teleprompter-viewport.position-top { top: 4%; }
         .teleprompter-viewport.position-center { top: 40%; }
         .teleprompter-viewport.position-bottom { top: 68%; }
         .reading-guide {
@@ -135,6 +135,23 @@
             opacity: 0;
             pointer-events: none;
         }
+        .show-controls-button {
+            display: none;
+            position: absolute;
+            right: 0.5rem;
+            bottom: 0.5rem;
+            z-index: 11;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .show-controls-button.active { display: block; }
         .control-group {
             display: flex;
             gap: 0.5rem;
@@ -257,7 +274,7 @@
         <div class="camera-wrapper">
             <video id="video" autoplay playsinline muted></video>
             <div class="teleprompter-overlay">
-                <div id="teleprompterViewport" class="teleprompter-viewport position-center">
+                <div id="teleprompterViewport" class="teleprompter-viewport position-top">
                     <div id="teleprompterText" class="teleprompter-text position-center"></div>
                     <div class="reading-guide" aria-hidden="true"></div>
                 </div>
@@ -267,6 +284,7 @@
             <video id="recordedVideo" controls playsinline></video>
         </div>
         <a id="downloadLink" class="download-link" download="teleprompter-recording.webm">Descargar video (.webm)</a>
+        <button id="showControlsBtn" class="show-controls-button" aria-label="Mostrar controles" title="Mostrar controles">+</button>
         <div class="controls" id="controls">
             <div class="control-group">
                 <button id="toggleRecordingBtn" class="btn btn-danger" disabled>Iniciar grabaci&oacute;n</button>
@@ -280,7 +298,7 @@
             <div class="control-group">
                 <label>Velocidad: <input type="range" id="speedRange" min="10" max="150" step="5" value="30"> <span id="speedValue">30</span> px/s</label>
                 <label>Tama&ntilde;o texto: <input type="range" id="fontSizeRange" min="1.25" max="3.5" step="0.125" value="2"> <span id="fontSizeValue">2</span> rem</label>
-                <label>Posici&oacute;n: <select id="positionSelect"><option value="top">Arriba</option><option value="center" selected>Centro</option><option value="bottom">Abajo</option></select></label>
+                <label>Posici&oacute;n: <select id="positionSelect"><option value="top" selected>Arriba</option><option value="center">Centro</option><option value="bottom">Abajo</option></select></label>
             </div>
         </div>
     </div>
@@ -293,6 +311,7 @@
         const pauseScrollBtn = document.getElementById('pauseScrollBtn');
         const resetScrollBtn = document.getElementById('resetScrollBtn');
         const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+        const showControlsBtn = document.getElementById('showControlsBtn');
         const speedRange = document.getElementById('speedRange');
         const speedValue = document.getElementById('speedValue');
         const fontSizeRange = document.getElementById('fontSizeRange');
@@ -466,7 +485,14 @@
         });
         toggleControlsBtn.addEventListener('click', () => {
             controls.classList.toggle('hidden');
-            toggleControlsBtn.textContent = controls.classList.contains('hidden') ? 'Mostrar controles' : 'Ocultar controles';
+            const hidden = controls.classList.contains('hidden');
+            toggleControlsBtn.textContent = hidden ? 'Mostrar controles' : 'Ocultar controles';
+            showControlsBtn.classList.toggle('active', hidden);
+        });
+        showControlsBtn.addEventListener('click', () => {
+            controls.classList.remove('hidden');
+            showControlsBtn.classList.remove('active');
+            toggleControlsBtn.textContent = 'Ocultar controles';
         });
         speedRange.addEventListener('input', () => {
             scrollSpeed = parseInt(speedRange.value);
