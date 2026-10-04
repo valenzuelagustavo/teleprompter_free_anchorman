@@ -83,14 +83,14 @@
             color: var(--text-color);
             text-shadow: var(--text-shadow);
             word-wrap: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
             font-weight: 600;
             text-align: center;
             will-change: transform;
         }
         .teleprompter-text span {
             display: block;
-            height: calc(var(--font-size) * var(--line-height));
-            overflow: hidden;
         }
         .teleprompter-viewport {
             position: absolute;
@@ -278,7 +278,7 @@
                 <textarea id="scriptInput" placeholder="Escribe o pega aqu&iacute; tu guion... Puedes editarlo antes o despu&eacute;s de grabar. Se guarda autom&aacute;ticamente." spellcheck="false"></textarea>
             </div>
             <div class="control-group">
-                <label>Velocidad: <input type="range" id="speedRange" min="10" max="150" step="5" value="40"> <span id="speedValue">40</span> px/s</label>
+                <label>Velocidad: <input type="range" id="speedRange" min="10" max="150" step="5" value="30"> <span id="speedValue">30</span> px/s</label>
                 <label>Tama&ntilde;o texto: <input type="range" id="fontSizeRange" min="1.25" max="3.5" step="0.125" value="2"> <span id="fontSizeValue">2</span> rem</label>
                 <label>Posici&oacute;n: <select id="positionSelect"><option value="top">Arriba</option><option value="center" selected>Centro</option><option value="bottom">Abajo</option></select></label>
             </div>
@@ -309,7 +309,7 @@
         let recordedChunks = [];
         let scrollAnimationId = null;
         let scrollPosition = 0;
-        let scrollSpeed = 40;
+        let scrollSpeed = 30;
         let isScrolling = false;
         let isRecording = false;
         let lastTimestamp = 0;
